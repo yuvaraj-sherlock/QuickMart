@@ -2,6 +2,7 @@ package com.quickmart.auth.jwt;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import io.jsonwebtoken.Claims;
@@ -30,11 +31,35 @@ public class JwtTokenProvider {
             .signWith(SignatureAlgorithm.HS256, secretKey)
             .compact();
   }
+  public boolean validateToken(String token) {
+    try {
+      parseClaims(token, secretKey);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  public String getUsernameFromToken(String token){
+    return parseClaims(token, secretKey).getSubject();
+  }
+
+  public List<String> getRolesFromToken(String token){
+    return (List<String>) parseClaims(token, secretKey).get("roles");
+  }
+
+  private Claims parseClaims(String token, Key secretKey) {
+    return Jwts.parserBuilder()
+            .setSigningKey(secretKey)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+  }
 
   private Claims createClaims(UserDetails userDetails) {
-    Claims claims = Jwts.claims();
-    claims.setSubject(userDetails.getUsername());
-    claims.put("roles", userDetails.getRoles()); // Add roles as a custom claim
+    Claims claims = Jwts.claims()
+            .setSubject(userDetails.getUsername());
+    claims.put("roles", userDetails.getRoles());
     return claims;
   }
 }
